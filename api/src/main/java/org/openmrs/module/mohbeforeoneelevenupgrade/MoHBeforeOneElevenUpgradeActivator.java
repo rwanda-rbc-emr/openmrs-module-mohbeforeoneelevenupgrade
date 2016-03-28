@@ -14,9 +14,11 @@
 package org.openmrs.module.mohbeforeoneelevenupgrade;
 
 
-import org.apache.commons.logging.Log; 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.Activator;
+import org.openmrs.module.ModuleException;
 
 /**
  * This class contains the logic that is run every time this module is either started or stopped.
@@ -29,7 +31,12 @@ public class MoHBeforeOneElevenUpgradeActivator implements Activator {
 	 * @see Activator#startup()
 	 */
 	public void startup() {
+		PrepareToUpgradeOrderDoseUnitsAndFrequencies prepareToUpgrade = new PrepareToUpgradeOrderDoseUnitsAndFrequencies();
+		
 		log.info("Starting MoH Before One Eleven Upgrade Module");
+		if(!prepareToUpgrade.runPrepareToUpgradeOrderDoseUnitsAndFrequencies()) {
+			throw new ModuleException(Context.getMessageSourceService().getMessage("mohbeforeoneelevenupgrade.failedToStart"));
+		}
 	}
 	
 	/**
@@ -38,6 +45,4 @@ public class MoHBeforeOneElevenUpgradeActivator implements Activator {
 	public void shutdown() {
 		log.info("Shutting down MoH Before One Eleven Upgrade Module");
 	}
-	
-		
 }

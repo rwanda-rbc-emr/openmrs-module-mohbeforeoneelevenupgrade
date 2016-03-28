@@ -15,10 +15,15 @@
 	<require_version>${openMRSVersion}</require_version>
 	<!-- / Module Properties -->
 
-	
 	<!-- Module Activator -->
 	<activator>${project.parent.groupId}.${project.parent.artifactId}.MoHBeforeOneElevenUpgradeActivator</activator>
 	
+	<!-- Required Global Properties -->
+	<globalProperty>
+		<property>mohbeforeoneelevenupgrade.executed</property>
+		<defaultValue>false</defaultValue> 
+		<description>DO NOT MODIFY. Automatically Set to and indicates whether this module's functionality has run or not</description> 
+	</globalProperty>
 	
 	<!-- Maps hibernate file's, if present -->
 	<mappingFiles>

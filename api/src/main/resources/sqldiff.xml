@@ -22,17 +22,4 @@
 		<sql></sql>
 	</diff>
  -->
- 
- <!--diff>
-		<version>1.0-SNAPSHOT</version>
-		<author>k-joseph</author>
-		<date>23 March 2016</date>
-		<description>Create test table</description>
-		<sql>
-			CREATE TABLE `mouth_oops_cant_code` (
-  				`id` int(11) NOT NULL
-			) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-		</sql>
-	</diff-->
-	
 </sqldiff>
