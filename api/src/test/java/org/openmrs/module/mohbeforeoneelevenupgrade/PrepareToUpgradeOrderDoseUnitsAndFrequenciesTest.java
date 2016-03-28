@@ -123,7 +123,7 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequenciesTest extends BaseModule
 		
 		Assert.assertEquals("en", gp.getPropertyValue());
 		
-		prepareInstance.updateGlobalProperty("locale.allowed.list", "fr");
+		prepareInstance.updateOrSaveNewGlobalProperty("locale.allowed.list", "fr");
 		
 		Assert.assertEquals("fr", gp.getPropertyValue());
 	}

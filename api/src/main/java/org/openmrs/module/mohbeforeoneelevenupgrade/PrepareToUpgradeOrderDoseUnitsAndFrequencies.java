@@ -67,7 +67,7 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 			Concept frequenciesSetConcept = conceptService.getConceptByUuid(FREQUENCIES_SET_UUID);
 			if (StringUtils.isBlank(doseUnitsSetConceptUuid)) {
 				doseUnitsSetConcept = createConcept(DOSE_UNIT_SET_NAME, DOSE_UNITS_SET_UUID, true);
-				updateGlobalProperty("order.drugDosingUnitsConceptUuid", DOSE_UNITS_SET_UUID);
+				updateOrSaveNewGlobalProperty("order.drugDosingUnitsConceptUuid", DOSE_UNITS_SET_UUID);
 			} else {
 				DOSE_UNITS_SET_UUID = doseUnitsSetConceptUuid;
 				doseUnitsSetConcept = conceptService.getConceptByUuid(DOSE_UNITS_SET_UUID);
@@ -102,7 +102,7 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 			}
 			createOrderEntryUpgradeFileAndWriteItsContent();
 			if (ORDER_ENTRY_UPGRADE_SETTINGS_FILE_WRITTEN) {
-				updateGlobalProperty("mohbeforeoneelevenupgrade.executed", "true");
+				updateOrSaveNewGlobalProperty("mohbeforeoneelevenupgrade.executed", "true");
 				return true;
 			} else {
 				return false;
@@ -148,9 +148,15 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 	 * @param propertyValue
 	 * @return
 	 */
-	public GlobalProperty updateGlobalProperty(String propertyName, String propertyValue) {
+	public GlobalProperty updateOrSaveNewGlobalProperty(String propertyName, String propertyValue) {
 		GlobalProperty gp = Context.getAdministrationService().getGlobalPropertyObject(propertyName);
 
+		if (gp == null) {
+			gp = new GlobalProperty();
+			
+			gp.setProperty(propertyName);
+			gp = Context.getAdministrationService().saveGlobalProperty(gp);
+		}
 		gp.setPropertyValue(propertyValue);
 		return gp;
 	}

@@ -82,5 +82,202 @@
 			</column>
 		</addColumn>
 	</changeSet>
+	<changeSet id="2016Mar28-2008" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `orders` WHERE encounter_id IS NULL;
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Update orders without encounter to encounter id 1, //TODO this is just hacky but meaningless
+		</comment>
+		<update tableName="orders">
+			<column name="encounter_id" value="1"/>
+			<where>encounter_id IS NULL</where>
+		</update>
+	</changeSet>
+	<changeSet id="2016Mar28-2012" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `orders` WHERE start_date IS NULL;
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Update orders without start_date to start_date 1.6.6 release date
+		</comment>
+		<update tableName="orders">
+			<column name="start_date" valueDate="2012-08-13T17:25:12"/>
+			<where>start_date IS NULL</where>
+		</update>
+	</changeSet>
+	<changeSet id="2016Mar28-2052" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `drug` WHERE dose_strength IS NOT NULL;
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Set units field for all drugs whose dose_strength is specified
+		</comment>
+		<update tableName="drug">
+			<column name="units" value="default"/>
+			<where>dose_strength IS NOT NULL</where>
+		</update>
+	</changeSet>
+	<changeSet id="2016Mar28-2056" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `orders` WHERE discontinued = true;
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Set all non set discontinued_date or discontinued_by for all discontinued orders
+		</comment>
+		<update tableName="orders">
+			<column name="discontinued_date" valueDate="2012-08-13T17:25:12"/>
+			<where>discontinued = true AND discontinued_date IS NULL</where>
+		</update>
+		<update tableName="orders">
+			<column name="discontinued_by" value="1"/>
+			<where>discontinued = true AND discontinued_by IS NULL</where>
+		</update>
+	</changeSet>
+	<changeSet id="2016Mar28-2358" author="k-joseph" dbms="mysql">
+    	<preConditions onFail="MARK_RAN">
+ 			<not>
+ 				<tableExists tableName="provider" />
+ 			</not>
+ 		</preConditions>
+ 		<comment>
+ 			Pre - Create provider table
+ 		</comment>
+ 		<createTable tableName="provider">
+ 			<column name="provider_id" type="int" autoIncrement="true">
+ 				<constraints primaryKey="true" nullable="false" />
+ 			</column>
+ 			<column name="person_id" type="int">
+ 				<constraints nullable="true" />
+ 			</column>
+ 			<column name="name" type="varchar(255)"></column>
+ 			<column name="identifier" type="varchar(255)"><constraints nullable="false" /></column>
+ 			<column name="creator" type="int">
+ 				<constraints nullable="false" />
+ 			</column>
+ 			<column name="date_created" type="datetime">
+ 				<constraints nullable="false" />
+ 			</column>
+ 			<column name="changed_by" type="int" />
+ 			<column name="date_changed" type="datetime" />
+ 			<column name="retired" type="BOOLEAN" defaultValueBoolean="false">
+ 				<constraints nullable="false" />
+ 			</column>
+ 			<column name="retired_by" type="int" />
+ 			<column name="date_retired" type="datetime" />
+ 			<column name="retire_reason" type="varchar(255)" defaultValue="null" />
+ 			<column name="uuid" type="char(38)">
+ 				<constraints nullable="false" unique="true" />
+ 			</column>
+ 		</createTable>
+ 		<addForeignKeyConstraint constraintName="provider_changed_by_fk"
+ 			baseTableName="provider" baseColumnNames="changed_by"
+ 			referencedTableName="users" referencedColumnNames="user_id" />
+ 		<addForeignKeyConstraint constraintName="provider_person_id_fk"
+ 			baseTableName="provider" baseColumnNames="person_id"
+ 			referencedTableName="person" referencedColumnNames="person_id" />
+ 
+ 		<addForeignKeyConstraint constraintName="provider_retired_by_fk"
+ 			baseTableName="provider" baseColumnNames="retired_by"
+ 			referencedTableName="users" referencedColumnNames="user_id" />
+ 		<addForeignKeyConstraint constraintName="provider_creator_fk"
+ 			baseTableName="provider" baseColumnNames="creator"
+ 			referencedTableName="users" referencedColumnNames="user_id" />
+ 	</changeSet>
+ 	<changeSet id="2016Mar28-2213" author="k-joseph" dbms="mysql">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM `provider` WHERE name = 'Unknown Provider';</sqlCheck>
+        </preConditions>
+        <comment>Insert Unknown Provider for non set drug orderers</comment>
+        <insert tableName="provider">
+            <column name="person_id" value="1" />
+            <column name="name" value="Unknown Provider" />
+            <column name="identifier" value="unknown" />
+            <column name="creator" value="1" />
+            <column name="date_created" valueDate="2016-03-28T22:25:46" />
+            <column name="retired" value="0" />
+            <column name="uuid" value="6a7d7d04-f523-11e5-9ce9-5e5517507c66" />
+        </insert>
+    </changeSet>
+    <changeSet id="2016Mar28-2237" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `orders` WHERE orderer IS NOT NULL;
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Create provider accounts for all drug orderers that exist
+		</comment>
+		<sql>
+			INSERT INTO provider (person_id, name, identifier, creator, date_created, retired, uuid)
+			SELECT u.user_id AS person_id, IFNULL(u.username, u.system_id) AS name, IFNULL(u.username, u.system_id) AS identifier, '1', '2016-03-28 23:14:03', '0', (SELECT UUID()) FROM users u INNER JOIN orders o ON u.user_id = o.orderer WHERE o.orderer IS NOT NULL;
+		</sql>
+	</changeSet>
+	<changeSet id="2016Mar28-2321" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `orders` WHERE orderer IS NULL;
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Provide way for OpenMRS to automatically Set orderer to 'Unknown Provider' for all orders without orders;
+			Creates and sets provider.unknownProviderUuid GP as required
+		</comment>
+		<insert tableName="global_property">
+			<column name="property" value="provider.unknownProviderUuid" />
+            <column name="property_value" value="6a7d7d04-f523-11e5-9ce9-5e5517507c66" />
+            <column name="uuid" value="0b665382-f52c-11e5-9ce9-5e5517507c66" />
+        </insert>
+	</changeSet>
+	<changeSet id="2016Mar29-0024" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `orders` WHERE orderer IS NULL;
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Set orderer for all unset orders orderers to unknown provider's user
+		</comment>
+		<update tableName="orders">
+			<column name="orderer" value="1"/>
+			<where>orderer IS NULL</where>
+		</update>
+	</changeSet>
 	
 </databaseChangeLog>
