@@ -237,8 +237,10 @@
 			Create provider accounts for all drug orderers that exist
 		</comment>
 		<sql>
+			SET foreign_key_checks = 0;
 			INSERT INTO provider (person_id, name, identifier, creator, date_created, retired, uuid)
-			SELECT u.user_id AS person_id, IFNULL(u.username, u.system_id) AS name, IFNULL(u.username, u.system_id) AS identifier, '1', '2016-03-28 23:14:03', '0', (SELECT UUID()) FROM users u INNER JOIN orders o ON u.user_id = o.orderer WHERE o.orderer IS NOT NULL;
+			SELECT DISTINCT u.user_id AS person_id, IFNULL(u.username, u.system_id) AS name, IFNULL(u.username, u.system_id) AS identifier, '1' AS creator, (NOW()) AS date_created, '0' AS retired, (SELECT UUID()) AS uuid FROM users u INNER JOIN orders o ON u.user_id = o.orderer WHERE o.orderer IS NOT NULL;
+			SET foreign_key_checks = 1;
 		</sql>
 	</changeSet>
 	<changeSet id="2016Mar28-2321" author="k-joseph" dbms="mysql">
