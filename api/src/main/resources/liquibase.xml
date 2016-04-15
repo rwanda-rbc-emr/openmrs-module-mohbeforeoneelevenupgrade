@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
  
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
-                  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
     <!--
         See http://www.liquibase.org/manual/home#available_database_refactorings
         for a list of supported elements and attributes
@@ -281,5 +281,155 @@
 			<where>orderer IS NULL</where>
 		</update>
 	</changeSet>
-	
+	<changeSet id="2016April13-2006" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `patient` WHERE patient_id NOT IN (select person_id from person)
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Create persons for all patients with no person
+		</comment>
+		<sql>
+			INSERT INTO `person` (`person_id`, `creator`, `date_created`, `uuid`)
+			SELECT patient_id AS person_id, creator, '(NOW())', '(SELECT UUID())' FROM `patient` WHERE patient_id NOT IN (select person_id from person);
+		</sql>
+	</changeSet>
+	<changeSet id="2016April15-1239" author="kishoreyekkanti, k-joseph">
+         <preConditions onFail="MARK_RAN">
+             <not><tableExists tableName="encounter_role"/></not>
+         </preConditions>
+         <comment>Creating encounter_role table</comment>
+         <createTable tableName="encounter_role">
+             <column name="encounter_role_id" type="int" autoIncrement="true">
+                 <constraints primaryKey="true" nullable="false" />
+             </column>
+             <column name="name" type="varchar(255)"><constraints nullable="false"/></column>
+             <column name="description" type="varchar(1024)"/>
+             <column name="creator" type="int"><constraints nullable="false"/></column>
+             <column name="date_created" type="datetime"><constraints nullable="false"/></column>
+             <column name="changed_by" type="int"/>
+             <column name="date_changed" type="datetime" />
+             <column name="retired" type="BOOLEAN" defaultValueBoolean="false">
+                 <constraints nullable="false"/>
+             </column>
+             <column name="retired_by" type="int" />
+             <column name="date_retired" type="datetime" />
+             <column name="retire_reason" type="varchar(255)" defaultValue="null"/>
+             <column name="uuid" type="char(38)"><constraints nullable="false" unique="true" /></column>
+         </createTable>
+         <addForeignKeyConstraint constraintName="encounter_role_creator_fk"
+             baseTableName="encounter_role" baseColumnNames="creator" referencedTableName="users"
+             referencedColumnNames="user_id" />
+         <addForeignKeyConstraint constraintName="encounter_role_changed_by_fk"
+             baseTableName="encounter_role" baseColumnNames="changed_by" referencedTableName="users"
+             referencedColumnNames="user_id" />
+         <addForeignKeyConstraint constraintName="encounter_role_retired_by_fk"
+             baseTableName="encounter_role" baseColumnNames="retired_by" referencedTableName="users"
+             referencedColumnNames="user_id" />
+     </changeSet>
+     <changeSet id="2016April15-1241" author="sree/vishnu, k-joseph">
+         <preConditions onFail="MARK_RAN">
+             <not><tableExists tableName="encounter_provider"/></not>
+         </preConditions>
+         <comment>Creating encounter_provider table</comment>
+         <createTable tableName="encounter_provider">
+             <column name="encounter_provider_id" type="int" autoIncrement="true">
+                 <constraints primaryKey="true" nullable="false" />
+         </column>
+             <column name="encounter_id" type="int"><constraints nullable="false" /></column>
+             <column name="provider_id" type="int"><constraints nullable="false" /> </column>
+             <column name="encounter_role_id" type="int"><constraints nullable="false" /></column>
+             <column defaultValueNumeric="0" name="creator" type="int"><constraints nullable="false"/></column>
+             <column name="date_created" type="datetime"><constraints nullable="false"/></column>
+             <column name="changed_by" type="int"/>
+             <column name="date_changed" type="datetime" />
+             <column defaultValueBoolean="false" name="voided" type="BOOLEAN"><constraints nullable="false" /></column>
+             <column name="date_voided" type="datetime" />
+             <column name="voided_by" type="int" />
+             <column name="void_reason" type="varchar(255)" />
+             <column name="uuid" type="char(38)"><constraints nullable="false" unique="true" /></column>
+         </createTable>
+         <addForeignKeyConstraint constraintName="encounter_id_fk"
+             baseTableName="encounter_provider" baseColumnNames="encounter_id" referencedTableName="encounter"
+             referencedColumnNames="encounter_id" />
+         <addForeignKeyConstraint constraintName="provider_id_fk"
+             baseTableName="encounter_provider" baseColumnNames="provider_id" referencedTableName="provider"
+             referencedColumnNames="provider_id" />
+         <addForeignKeyConstraint constraintName="encounter_role_id_fk"
+             baseTableName="encounter_provider" baseColumnNames="encounter_role_id" referencedTableName="encounter_role"
+             referencedColumnNames="encounter_role_id" />
+     </changeSet>
+     
+     <changeSet id="2016April15-1243" author="raff, k-joseph">
+	     	<preConditions onFail="MARK_RAN">
+ 			<sqlCheck expectedResult="0">
+ 				select count(*) from encounter_role where uuid = 'a0b03050-c99b-11e0-9572-0800200c9a66'
+ 			</sqlCheck>
+ 		</preConditions>
+     	<comment>Inserting the unknown encounter role into the encounter_role table</comment>
+ 		<insert tableName="encounter_role">
+ 			<column name="name" value="Unknown"/>
+ 			<column name="description" value="Unknown encounter role for legacy providers with no encounter role set"/>
+ 			<column name="creator" valueNumeric="1"/>
+ 			<column name="date_created" valueDate="2011-08-18T14:00:00.0" />
+ 			<column name="retired" valueBoolean="false" />
+ 			<column name="uuid" value="a0b03050-c99b-11e0-9572-0800200c9a66" />
+ 		</insert>
+		<!-- Update postgres sequence correctly as it is incorrect after initial bulk inserts -->
+		<modifySql dbms="postgresql">
+			<prepend value="SELECT setval('encounter_role_encounter_role_id_seq', (SELECT MAX(encounter_role_id) FROM encounter_role)+1);"/>
+		</modifySql>
+     </changeSet>
+     <changeSet id="2016April15-1244" author="raff, k-joseph" dbms="mysql">
+     	<preConditions onFail="MARK_RAN">
+ 			<columnExists tableName="encounter" columnName="provider_id"/>
+ 		</preConditions>
+ 		<comment>Creating providers for persons from the encounter table</comment>
+ 		<sql>
+ 			insert into provider(person_id, identifier, creator, date_created, retired, uuid)
+ 				select distinct person.person_id, CONCAT('prov', SUBSTRING(person.uuid, 5)), 1, CURRENT_TIMESTAMP, false, CONCAT('prov', SUBSTRING(person.uuid, 5)) 
+ 				from person as person
+ 					inner join encounter as encounter on encounter.provider_id = person.person_id
+ 					left join users as user on user.person_id = person.person_id
+ 				where user.person_id is null and encounter.provider_id not in (select person_id from provider);
+ 				
+ 			insert into provider(person_id, identifier, creator, date_created, retired, retired_by, date_retired, retire_reason, uuid)
+ 				select distinct person.person_id, user.system_id, 1, CURRENT_TIMESTAMP, user.retired, user.retired_by, user.date_retired, user.retire_reason, CONCAT('prov', SUBSTRING(person.uuid, 5))
+ 				from person as person
+ 					inner join encounter as encounter on encounter.provider_id = person.person_id
+ 					left join (select max(users.user_id) as user_id, users.system_id, users.person_id, users.retired, users.retired_by, users.date_retired, users.retire_reason 
+ 							from users as users group by users.person_id) as user 
+ 						on person.person_id = user.person_id
+ 				where user.user_id is not null and encounter.provider_id not in (select person_id from provider);
+         </sql>
+ 	</changeSet>
+     <changeSet id="2016April15-1245" author="raff, k-joseph" dbms="mysql">
+     	<preConditions onFail="MARK_RAN">
+ 			<columnExists tableName="encounter" columnName="provider_id"/>
+ 		</preConditions>
+ 		<comment>Fixing this changeset (https://goo.gl/oVCYKI) from core; Migrating providers from the encounter table to the encounter_provider table</comment>
+ 		<sql>			
+ 			insert ignore into encounter_provider(provider_id, encounter_id, encounter_role_id, creator, date_created, voided, uuid) 
+ 				select distinct provider.provider_id, encounter.encounter_id, encounter_role.encounter_role_id, 
+ 					encounter.creator, encounter.date_created, encounter.voided, encounter.uuid
+ 				from encounter as encounter 
+ 					inner join encounter_role as encounter_role 
+ 						on encounter_role.uuid = "a0b03050-c99b-11e0-9572-0800200c9a66"
+ 					inner join provider as provider on encounter.provider_id = provider.person_id
+ 				where encounter.encounter_id not in (select encounter_id from encounter_provider);
+         </sql>
+ 	</changeSet>
+	<changeSet id="2016April15-1349" author="raff, k-joseph">
+ 		<preConditions onFail="MARK_RAN">
+ 			<columnExists tableName="encounter" columnName="provider_id"/>
+ 		</preConditions>
+ 		<comment>Dropping the provider_id column from the encounter table</comment>
+ 		<dropForeignKeyConstraint baseTableName="encounter" constraintName="encounter_provider"/>
+         <dropColumn tableName="encounter" columnName="provider_id"/>
+ 	</changeSet>
 </databaseChangeLog>
