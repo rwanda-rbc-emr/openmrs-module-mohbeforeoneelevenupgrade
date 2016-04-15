@@ -296,7 +296,7 @@
 		</comment>
 		<sql>
 			INSERT INTO `person` (`person_id`, `creator`, `date_created`, `uuid`)
-			SELECT patient_id AS person_id, creator, '(NOW())', '(SELECT UUID())' FROM `patient` WHERE patient_id NOT IN (select person_id from person);
+			SELECT DISTINCT patient_id AS person_id, creator, NOW() AS date_created, (SELECT UUID()) AS uuid FROM `patient` WHERE patient_id NOT IN (select person_id from person);
 		</sql>
 	</changeSet>
 	<changeSet id="2016April15-1239" author="kishoreyekkanti, k-joseph">
@@ -432,4 +432,22 @@
  		<dropForeignKeyConstraint baseTableName="encounter" constraintName="encounter_provider"/>
          <dropColumn tableName="encounter" columnName="provider_id"/>
  	</changeSet>
+ 	<changeSet id="2016April13-1546" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `provider` WHERE person_id NOT IN (select person_id from person)
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Create persons for all providers with no person
+		</comment>
+		<sql>
+			INSERT INTO `person` (`person_id`, `creator`, `date_created`, `uuid`)
+			SELECT DISTINCT person_id, creator, NOW() AS date_created, (SELECT UUID()) AS uuid FROM `provider` WHERE person_id NOT IN (select person_id from person)
+		</sql>
+	</changeSet>
 </databaseChangeLog>
