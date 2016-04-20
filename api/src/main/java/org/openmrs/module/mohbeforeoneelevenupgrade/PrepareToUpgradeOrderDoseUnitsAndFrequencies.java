@@ -33,7 +33,11 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 	private String DOSE_UNITS_SET_UUID = "87560c3e-8fdd-44c3-9bf8-3be9c6d7c241";
 
 	private String FREQUENCIES_SET_UUID = "f73e5638-859d-4fcb-80da-82a68c90d4b5";
+	
+	private String DRUG_ROUTES_SET_UUID = "969ee822-8e85-41f0-b636-dcbac1592e7a";
 
+	private String DRUG_ROUTES_SET_NAME = "SAMPLE DRUG ROUTES";
+	
 	private static String DOSE_UNIT_SET_NAME = "DOSING UNITS";
 
 	private static String FREQUENCIES_SET_NAME = "DRUG ORDER FREQUENCIES";
@@ -59,8 +63,6 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 			Concept doseUnitsSetConcept = null;
 			String doseUnitsSetConceptUuid = Context.getAdministrationService()
 					.getGlobalProperty("order.drugDosingUnitsConceptUuid");
-			// String routesSetConceptUuid =
-			// Context.getAdministrationService().getGlobalProperty("order.drugRoutesConceptUuid");
 			List<DrugOrder> allDrugOrders = orderService.getDrugOrders();
 			List<String> doseUnits = new ArrayList<String>();
 			List<String> frequencies = new ArrayList<String>();
@@ -101,6 +103,7 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 				addDoseUnitOrFrequencyEntryToSettingFileContent(mem, member.getConceptId());
 			}
 			createOrderEntryUpgradeFileAndWriteItsContent();
+			createSampleStartingDrugRoutes();
 			if (ORDER_ENTRY_UPGRADE_SETTINGS_FILE_WRITTEN) {
 				updateOrSaveNewGlobalProperty("mohbeforeoneelevenupgrade.executed", "true");
 				return true;
@@ -158,6 +161,7 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 			gp = Context.getAdministrationService().saveGlobalProperty(gp);
 		}
 		gp.setPropertyValue(propertyValue);
+		
 		return gp;
 	}
 
@@ -260,5 +264,46 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 	public String removeLastOccurencyOf(String string, String stringToToRemoved) {
 		int ind = string.lastIndexOf(stringToToRemoved);
 		return new StringBuilder(string).replace(ind, ind + 1, "").toString();
+	}
+	
+	public void createSampleStartingDrugRoutes() {
+		GlobalProperty gp = Context.getAdministrationService().getGlobalPropertyObject("order.drugRoutesConceptUuid");
+		
+		if(gp == null) {
+			gp = updateOrSaveNewGlobalProperty("order.drugRoutesConceptUuid", "");
+		}
+		
+		if(StringUtils.isBlank(gp.getPropertyValue())) {
+			Concept drugRoutesSetConcept = createConcept(DRUG_ROUTES_SET_NAME, DRUG_ROUTES_SET_UUID, true);
+			Concept member1 = addConceptSetMember(drugRoutesSetConcept, createConcept("ORAL", null, false), 0.0);
+			Concept member2 = addConceptSetMember(drugRoutesSetConcept, createConcept("SUBLINGUAL", null, false), 0.0);
+			Concept member3 = addConceptSetMember(drugRoutesSetConcept, createConcept("PER RECTUM", null, false), 0.0);
+			Concept member4 = addConceptSetMember(drugRoutesSetConcept, createConcept("INTRAVENOUS", null, false), 0.0);
+			Concept member5 = addConceptSetMember(drugRoutesSetConcept, createConcept("INTRAOSSEOUS", null, false), 0.0);
+			Concept member6 = addConceptSetMember(drugRoutesSetConcept, createConcept("ENDOTRACHEAL INHALATION", null, false), 0.0);
+			Concept member7 = addConceptSetMember(drugRoutesSetConcept, createConcept("INTRAMUSCULAR", null, false), 0.0);
+			Concept member8 = addConceptSetMember(drugRoutesSetConcept, createConcept("RECTAL", null, false), 0.0);
+			Concept member9 = addConceptSetMember(drugRoutesSetConcept, createConcept("INGESTION", null, false), 0.0);
+			Concept member10 = addConceptSetMember(drugRoutesSetConcept, createConcept("PARENTERAL", null, false), 0.0);
+			Concept member11 = addConceptSetMember(drugRoutesSetConcept, createConcept("TOPICAL", null, false), 0.0);
+			Concept member12 = addConceptSetMember(drugRoutesSetConcept, createConcept("UNASSIGNED", null, false), 0.0);
+			Concept member13 = addConceptSetMember(drugRoutesSetConcept, createConcept("UNKNOWN", null, false), 0.0);
+			Concept member14 = addConceptSetMember(drugRoutesSetConcept, createConcept("VAGINAL", null, false), 0.0);
+			Concept member15 = addConceptSetMember(drugRoutesSetConcept, createConcept("SOFT TISSUE", null, false), 0.0);
+			Concept member16 = addConceptSetMember(drugRoutesSetConcept, createConcept("RESPIRATORY (INHALATION)", null, false), 0.0);
+			Concept member17 = addConceptSetMember(drugRoutesSetConcept, createConcept("PERINEURAL", null, false), 0.0);
+			Concept member18 = addConceptSetMember(drugRoutesSetConcept, createConcept("NASAL", null, false), 0.0);
+			Concept member19 = addConceptSetMember(drugRoutesSetConcept, createConcept("INTERSTITIAL", null, false), 0.0);
+			Concept member20 = addConceptSetMember(drugRoutesSetConcept, createConcept("HEMODIALYSIS", null, false), 0.0);
+			Concept member21 = addConceptSetMember(drugRoutesSetConcept, createConcept("DENTAL", null, false), 0.0);
+			Concept member22 = addConceptSetMember(drugRoutesSetConcept, createConcept("ENDOCERVICAL", null, false), 0.0);
+			Concept member23 = addConceptSetMember(drugRoutesSetConcept, createConcept("ENTERAL", null, false), 0.0);
+			Concept member24 = addConceptSetMember(drugRoutesSetConcept, createConcept("INFILTRATION", null, false), 0.0);
+			Concept member25 = addConceptSetMember(drugRoutesSetConcept, createConcept("OPHTHALMIC", null, false), 0.0);
+			Concept member26 = addConceptSetMember(drugRoutesSetConcept, createConcept("PERIARTICULAR", null, false), 0.0);
+			Concept member27 = addConceptSetMember(drugRoutesSetConcept, createConcept("SUBCUTANEOUS", null, false), 0.0);
+		
+			updateOrSaveNewGlobalProperty(gp.getProperty(), DRUG_ROUTES_SET_UUID);
+		}
 	}
 }
