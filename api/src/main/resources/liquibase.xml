@@ -359,13 +359,19 @@
              referencedColumnNames="encounter_id" />
          <addForeignKeyConstraint constraintName="provider_id_fk"
              baseTableName="encounter_provider" baseColumnNames="provider_id" referencedTableName="provider"
-             referencedColumnNames="provider_id" />
+             referencedColumnNames="provider_id" onUpdate="CASCADE" />
          <addForeignKeyConstraint constraintName="encounter_role_id_fk"
              baseTableName="encounter_provider" baseColumnNames="encounter_role_id" referencedTableName="encounter_role"
              referencedColumnNames="encounter_role_id" />
      </changeSet>
-     
-     <changeSet id="2016April15-1243" author="raff, k-joseph">
+    <changeSet id="2016April26-1003" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<foreignKeyConstraintExists foreignKeyName="orderer_not_drug" />
+		</preConditions>
+		<comment>Dropping foreign key on orders.orderer_not_drug table</comment>
+		<dropForeignKeyConstraint baseTableName="orders" constraintName="orderer_not_drug" />
+	</changeSet>
+	<changeSet id="2016April15-1243" author="raff, k-joseph">
 	     	<preConditions onFail="MARK_RAN">
  			<sqlCheck expectedResult="0">
  				select count(*) from encounter_role where uuid = 'a0b03050-c99b-11e0-9572-0800200c9a66'
@@ -373,6 +379,7 @@
  		</preConditions>
      	<comment>Inserting the unknown encounter role into the encounter_role table</comment>
  		<insert tableName="encounter_role">
+ 			<column name="encounter_role_id" value="111111111"/>
  			<column name="name" value="Unknown"/>
  			<column name="description" value="Unknown encounter role for legacy providers with no encounter role set"/>
  			<column name="creator" valueNumeric="1"/>
@@ -429,7 +436,7 @@
  			<columnExists tableName="encounter" columnName="provider_id"/>
  		</preConditions>
  		<comment>Dropping the provider_id column from the encounter table</comment>
- 		<dropForeignKeyConstraint baseTableName="encounter" constraintName="encounter_provider"/>
+ 		<dropForeignKeyConstraint baseTableName="encounter" constraintName="encounter_provider" />
          <dropColumn tableName="encounter" columnName="provider_id"/>
  	</changeSet>
  	<changeSet id="2016April13-1546" author="k-joseph" dbms="mysql">
@@ -448,6 +455,62 @@
 		<sql>
 			INSERT INTO `person` (`person_id`, `creator`, `date_created`, `uuid`)
 			SELECT DISTINCT person_id, creator, NOW() AS date_created, (SELECT UUID()) AS uuid FROM `provider` WHERE person_id NOT IN (select person_id from person)
+		</sql>
+	</changeSet>
+     <changeSet id="2016April26-1030" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+				<![CDATA[
+				SELECT count(*) FROM provider WHERE provider_id != person_id;
+				]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Resolve all current inconsistencies around persons and providers entries, re-add orderer_not_drug foreign key, the precondition must be met in earlier OpenMRS versions
+		</comment>
+		<sql>
+			SET foreign_key_checks = 0;
+			ALTER TABLE `orders` ADD CONSTRAINT `orderer_not_drug` FOREIGN KEY (`orderer`) REFERENCES `provider`(`provider_id`) ON UPDATE CASCADE;
+			UPDATE provider SET provider_id = 111111111, person_id = 111111111 WHERE name = 'Unknown Provider';
+			UPDATE IGNORE provider pr INNER JOIN person p ON pr.person_id = p.person_id SET pr.provider_id = pr.person_id WHERE pr.provider_id != pr.person_id;
+			UPDATE IGNORE provider pr INNER JOIN person p ON pr.person_id = p.person_id SET pr.provider_id = pr.person_id WHERE pr.provider_id != pr.person_id/*run this again to clear any missed ones*/;
+			SET foreign_key_checks = 1;
+		</sql>
+	</changeSet>
+	<changeSet id="2016April26-2230" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+				<![CDATA[
+				SELECT count(*) FROM encounter_provider WHERE provider_id NOT IN (SELECT DISTINCT provider_id FROM provider);
+				]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Bump all non existing encounter providers to un known provider
+		</comment>
+		<sql>
+			UPDATE encounter_provider SET provider_id = 111111111 WHERE provider_id NOT IN (SELECT DISTINCT provider_id FROM provider)
+		</sql>
+	</changeSet>
+	<changeSet id="2016April26-2231" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+				<![CDATA[
+				SELECT count(*) FROM encounter_provider WHERE provider_id NOT IN (SELECT DISTINCT provider_id FROM provider);
+				]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Create unknown person for unknown provider
+		</comment>
+		<sql>
+			INSERT INTO `person` (`person_id`, `gender`, `birthdate`, `birthdate_estimated`, `dead`, `death_date`, `cause_of_death`, `creator`, `date_created`, `changed_by`, `date_changed`, `voided`, `voided_by`, `date_voided`, `void_reason`, `uuid`, `deathdate_estimated`, `birthtime`) VALUES ('111111111', 'M', NULL, '0', '0', NULL, NULL, '1', '2005-01-01 00:00:00', '1', '2016-02-10 08:20:43', '0', NULL, NULL, NULL, 'd773806a-0be5-11e6-a148-3e1d05defe78', '0', NULL);
 		</sql>
 	</changeSet>
 </databaseChangeLog>
