@@ -57,8 +57,9 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 	 *         file
 	 */
 	public boolean runPrepareToUpgradeOrderDoseUnitsAndFrequencies() {
-		boolean alreadyRun = Context.getAdministrationService().getGlobalProperty("mohbeforeoneelevenupgrade.executed")
-				.equals("true") ? true : false;
+		String gpAlreadyRunValue = Context.getAdministrationService().getGlobalProperty("mohbeforeoneelevenupgrade.executed");
+		boolean alreadyRun = StringUtils.isNotBlank(gpAlreadyRunValue) ? (Context.getAdministrationService().getGlobalProperty("mohbeforeoneelevenupgrade.executed")
+				.equals("true") ? true : false) : false;
 		if (!alreadyRun) {
 			Concept doseUnitsSetConcept = null;
 			String doseUnitsSetConceptUuid = Context.getAdministrationService()
@@ -162,7 +163,7 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 		}
 		gp.setPropertyValue(propertyValue);
 		
-		return gp;
+		return Context.getAdministrationService().saveGlobalProperty(gp);
 	}
 
 	/**
@@ -303,7 +304,7 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 			Concept member26 = addConceptSetMember(drugRoutesSetConcept, createConcept("PERIARTICULAR", null, false), 0.0);
 			Concept member27 = addConceptSetMember(drugRoutesSetConcept, createConcept("SUBCUTANEOUS", null, false), 0.0);
 		
-			updateOrSaveNewGlobalProperty(gp.getProperty(), DRUG_ROUTES_SET_UUID);
+			updateOrSaveNewGlobalProperty("order.drugRoutesConceptUuid", DRUG_ROUTES_SET_UUID);
 		}
 	}
 }
