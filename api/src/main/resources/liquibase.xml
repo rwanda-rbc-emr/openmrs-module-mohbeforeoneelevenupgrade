@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
  
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
-	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd
-    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+ 
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
+                  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
     <!--
         See http://www.liquibase.org/manual/home#available_database_refactorings
         for a list of supported elements and attributes
@@ -229,6 +230,7 @@
         </preConditions>
         <comment>Insert Unknown Provider for non set drug orderers</comment>
         <insert tableName="provider">
+        	<column name="provider_id" value="111111111" />
             <column name="person_id" value="111111111" />
             <column name="name" value="Unknown Provider" />
             <column name="identifier" value="unknown" />
@@ -238,24 +240,6 @@
             <column name="uuid" value="6a7d7d04-f523-11e5-9ce9-5e5517507c66" />
         </insert>
     </changeSet>
-    <changeSet id="2016Mar28-2237" author="k-joseph" dbms="mysql">
-		<preConditions onFail="MARK_RAN">
-			<not>
-				<sqlCheck expectedResult="0">
-					<![CDATA[
-					SELECT COUNT(*) FROM `orders` WHERE orderer IS NOT NULL;
-					]]>
-				</sqlCheck>
-			</not>
-		</preConditions>
-		<comment>
-			Create provider accounts for all drug orderers that exist
-		</comment>
-		<sql>
-			INSERT INTO provider (person_id, name, identifier, creator, date_created, retired, uuid)
-			SELECT DISTINCT u.user_id AS person_id, IFNULL(u.username, u.system_id) AS name, IFNULL(u.username, u.system_id) AS identifier, '1' AS creator, (NOW()) AS date_created, '0' AS retired, (SELECT UUID()) AS uuid FROM users u INNER JOIN orders o ON u.user_id = o.orderer WHERE o.orderer IS NOT NULL;
-		</sql>
-	</changeSet>
 	<changeSet id="2016Mar28-2321" author="k-joseph" dbms="mysql">
 		<preConditions onFail="MARK_RAN">
 			<not>
@@ -276,6 +260,27 @@
             <column name="uuid" value="0b665382-f52c-11e5-9ce9-5e5517507c66" />
         </insert>
 	</changeSet>
+	<changeSet id="2016May03-1735" author="k-joseph">
+		<preConditions onFail="MARK_RAN">
+			<sqlCheck expectedResult="0">
+				<![CDATA[
+				SELECT COUNT(*) FROM `users` WHERE user_id = 111111111;
+				]]>
+			</sqlCheck>
+		</preConditions>
+		<comment>
+			Add user for unknown user id orderer
+		</comment>
+		<insert tableName="users">
+			<column name="user_id" value="111111111" />
+			<column name="person_id" value="111111111" />
+			<column name="system_id" value="unknown" />
+			<column name="creator" value="1" />
+			<column name="date_created" valueDate="2016-05-03T14:00:00.0" />
+			<column name="retired" value="1" />
+			<column name="uuid" value="1d575c76-113d-11e6-a148-3e1d05defe78" />
+        </insert>
+	</changeSet>
 	<changeSet id="2016Mar29-0024" author="k-joseph" dbms="mysql">
 		<preConditions onFail="MARK_RAN">
 			<not>
@@ -290,9 +295,27 @@
 			Set orderer for all unset orders orderers to unknown provider's user
 		</comment>
 		<update tableName="orders">
-			<column name="orderer" value="1"/>
+			<column name="orderer" value="111111111"/>
 			<where>orderer IS NULL</where>
 		</update>
+	</changeSet>
+    <changeSet id="2016Mar28-2237" author="k-joseph" dbms="mysql">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<sqlCheck expectedResult="0">
+					<![CDATA[
+					SELECT COUNT(*) FROM `orders` WHERE orderer IS NOT NULL;
+					]]>
+				</sqlCheck>
+			</not>
+		</preConditions>
+		<comment>
+			Create provider accounts for all drug orderers that exist
+		</comment>
+		<sql>
+			INSERT INTO provider (provider_id, person_id, name, identifier, creator, date_created, retired, uuid)
+			SELECT DISTINCT u.user_id AS provider_id, 111111111 AS person_id, IFNULL(u.username, u.system_id) AS name, IFNULL(u.username, u.system_id) AS identifier, u.creator, (NOW()) AS date_created, '0' AS retired, (SELECT UUID()) AS uuid FROM users u INNER JOIN orders o ON u.user_id = o.orderer WHERE o.orderer IS NOT NULL AND u.user_id != 111111111;
+		</sql>
 	</changeSet>
 	<changeSet id="2016April13-2006" author="k-joseph" dbms="mysql">
 		<preConditions onFail="MARK_RAN">
@@ -445,25 +468,7 @@
  		<dropForeignKeyConstraint baseTableName="encounter" constraintName="encounter_provider" />
          <dropColumn tableName="encounter" columnName="provider_id"/>
  	</changeSet>
- 	<changeSet id="2016April13-1546" author="k-joseph" dbms="mysql">
-		<preConditions onFail="MARK_RAN">
-			<not>
-				<sqlCheck expectedResult="0">
-					<![CDATA[
-					SELECT COUNT(*) FROM `provider` WHERE person_id NOT IN (select person_id from person)
-					]]>
-				</sqlCheck>
-			</not>
-		</preConditions>
-		<comment>
-			Create persons for all providers with no person
-		</comment>
-		<sql>
-			INSERT INTO `person` (`person_id`, `creator`, `date_created`, `uuid`)
-			SELECT DISTINCT person_id, creator, NOW() AS date_created, (SELECT UUID()) AS uuid FROM `provider` WHERE person_id NOT IN (select person_id from person)
-		</sql>
-	</changeSet>
-     <changeSet id="2016April26-1030" author="k-joseph" dbms="mysql">
+    <changeSet id="2016April26-1030" author="k-joseph" dbms="mysql">
 		<preConditions onFail="MARK_RAN">
 			<not>
 				<sqlCheck expectedResult="0">
