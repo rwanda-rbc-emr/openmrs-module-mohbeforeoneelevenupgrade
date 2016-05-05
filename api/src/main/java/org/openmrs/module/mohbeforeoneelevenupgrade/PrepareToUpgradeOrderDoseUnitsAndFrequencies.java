@@ -4,13 +4,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.openmrs.Concept;
-import org.openmrs.ConceptAnswer;
 import org.openmrs.ConceptName;
 import org.openmrs.ConceptSet;
 import org.openmrs.DrugOrder;
@@ -34,8 +32,6 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 
 	private String DOSE_UNITS_SET_UUID = "87560c3e-8fdd-44c3-9bf8-3be9c6d7c241";
 	
-	private Integer CIEL_DRUG_ORDER_FREQUENCY_CODED = 3320;
-
 	private String FREQUENCIES_SET_UUID = "f73e5638-859d-4fcb-80da-82a68c90d4b5";
 	
 	private String DRUG_ROUTES_SET_UUID = "969ee822-8e85-41f0-b636-dcbac1592e7a";
@@ -100,11 +96,6 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 			}
 			if (frequenciesSetConcept == null) {
 				frequenciesSetConcept = createConcept(FREQUENCIES_SET_NAME, FREQUENCIES_SET_UUID, true);
-			}
-			//Add members from CIEL_DRUG_ORDER_FREQUENCY_CODED to frequenciesSetConcept
-			Concept orderFreqsFromCiel = conceptService.getConcept(CIEL_DRUG_ORDER_FREQUENCY_CODED);
-			if(orderFreqsFromCiel != null) {
-				frequenciesSetConcept = addMembersFromCiel(frequenciesSetConcept, orderFreqsFromCiel.getAnswers());
 			}
 			for (String mem : frequencies) {
 				Concept member = createConcept(mem, null, false);
@@ -200,18 +191,6 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 			return conceptService.getConcept(set.getId());
 		} else
 			return null;
-	}
-
-	public Concept addMembersFromCiel(Concept set, Collection<ConceptAnswer> cielFreqs) {
-		if(set != null && set.isSet() && cielFreqs != null) {
-			for(ConceptAnswer ca : cielFreqs) {
-				ConceptSet setMember = new ConceptSet(ca.getAnswerConcept(), 0.0);
-				set.getConceptSets().add(setMember);
-				set.setConceptSets(set.getConceptSets());
-			}
-			conceptService.saveConcept(set);
-		}
-		return set;
 	}
 	
 	public void addStringToStringsList(List<String> list, String string) {
