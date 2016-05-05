@@ -4,7 +4,7 @@
 
 	<groupId>org.openmrs.module</groupId>
 	<artifactId>mohbeforeoneelevenupgrade</artifactId>
-	<version>1.3.1</version>
+	<version>1.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>MoH Before One Eleven Upgrade Module</name>
 	<description>Upgrades existing database before 1.11.x upgrade</description>
