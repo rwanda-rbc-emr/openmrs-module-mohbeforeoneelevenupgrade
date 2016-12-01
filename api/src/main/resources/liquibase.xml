@@ -306,7 +306,7 @@
 		</comment>
 		<sql>
 			INSERT INTO provider (provider_id, person_id, name, identifier, creator, date_created, retired, uuid)
-			SELECT DISTINCT u.user_id AS provider_id, (SELECT person_id FROM person WHERE uuid = '8ea1809e-9b78-11e6-9f33-a24fc0d9649c') AS person_id, IFNULL(u.username, u.system_id) AS name, IFNULL(u.username, u.system_id) AS identifier, u.creator, (NOW()) AS date_created, '0' AS retired, (SELECT UUID()) AS uuid FROM users u INNER JOIN orders o ON u.user_id = o.orderer WHERE o.orderer IS NOT NULL AND u.user_id != (SELECT person_id FROM person WHERE uuid = '8ea1809e-9b78-11e6-9f33-a24fc0d9649c');
+			SELECT DISTINCT u.user_id AS provider_id, u.person_id AS person_id, IFNULL(u.username, u.system_id) AS name, IFNULL(u.username, u.system_id) AS identifier, u.creator, (NOW()) AS date_created, '0' AS retired, (SELECT UUID()) AS uuid FROM users u INNER JOIN orders o ON u.user_id = o.orderer WHERE o.orderer IS NOT NULL AND u.user_id != (SELECT person_id FROM person WHERE uuid = '8ea1809e-9b78-11e6-9f33-a24fc0d9649c');
 		</sql>
 	</changeSet>
 	<changeSet id="2016April13-2006" author="k-joseph" dbms="mysql">
