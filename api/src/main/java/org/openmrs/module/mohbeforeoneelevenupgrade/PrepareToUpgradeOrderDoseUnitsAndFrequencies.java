@@ -65,6 +65,9 @@ public class PrepareToUpgradeOrderDoseUnitsAndFrequencies {
 			String doseUnitsSetConceptUuid = Context.getAdministrationService()
 					.getGlobalProperty("order.drugDosingUnitsConceptUuid");
 			List<DrugOrder> allDrugOrders = orderService.getDrugOrders();
+			if(allDrugOrders.isEmpty()) {
+				return true;
+			}
 			List<String> doseUnits = new ArrayList<String>();
 			List<String> frequencies = new ArrayList<String>();
 			Concept frequenciesSetConcept = conceptService.getConceptByUuid(FREQUENCIES_SET_UUID);
